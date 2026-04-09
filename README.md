@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This project demonstrates the deployment and configuration of Microsoft Sentinel (SIEM) to detect credential-based attack behavior using Microsoft Entra ID (Azure AD) sign‑in logs. A custom KQL analytics rule was created to identify multiple failed sign‑in attempts within a defined time window and generate security incidents following SOC analyst workflows.
+This project demonstrates the deployment and configuration of **Microsoft Sentinel (SIEM)** to detect credential-based attack behavior using **Microsoft Entra ID (Azure AD)** sign‑in logs. A custom **KQL** analytics rule was created to identify multiple failed sign‑in attempts within a defined time window and generate security incidents following **SOC analyst** workflows.
 
 This lab validates end-to-end SIEM functionality, from log ingestion to incident creation and investigation.
 
@@ -39,28 +39,28 @@ Security Incident
 ### Tenant and Subscription Validation
 Verified correct Azure tenant and subscription context prior to deployment.
 
-screenshots/01-tenant-verification.png
+![Tenant validation](screenshots/01-tenant-verification.png)
 
 ---
 
 ### Role-Based Access Control (RBAC)
 Granted Contributor permissions at the subscription scope to enable Sentinel resource deployment.
 
-screenshots/02-rbac-contributor-role.png
+![RBAC contributor role](screenshots/02-rbac-contributor-role.png)
 
 ---
 
 ### Log Analytics Workspace Deployment
 Created a dedicated Log Analytics Workspace to store security telemetry.
 
-screenshots/03-log-analytics-workspace-deployed.png
+![Log Analytics workspace deployed](screenshots/03-log-analytics-workspace-deployed.png)
 
 ---
 
 ### Microsoft Sentinel Enabled
 Enabled Microsoft Sentinel on the workspace.
 
-screenshots/04-sentinel-enabled.png
+![Sentinel enabled on workspace](screenshots/04-sentinel-enabled.png)
 
 ---
 
@@ -69,24 +69,26 @@ screenshots/04-sentinel-enabled.png
 ### Entra ID Solution Deployment
 Deployed the required Sentinel solution for Entra ID monitoring.
 
-screenshots/05-entra-id-solution-deployed.png
+![Entra ID solution deployed](screenshots/05-entra-id-solution-deployed.png)
 
 ---
 
 ### Diagnostic Settings
 Configured Entra ID diagnostic settings to forward SignInLogs and AuditLogs to Sentinel.
 
-screenshots/06-entra-id-diagnostic-settings.png
+![Entra ID diagnostic settings](screenshots/06-entra-id-diagnostic-settings.png)
 
 ---
 
 ### Log Ingestion Validation
 Confirmed successful ingestion of Entra ID sign‑in logs.
 
+```kql
 SigninLogs  
 | take 5
+```
 
-screenshots/07-signinlogs-ingestion.png
+![SigninLogs query results](screenshots/07-signinlogs-ingestion.png)
 
 ---
 
@@ -119,8 +121,8 @@ SigninLogs
 - Schedule: Runs every 5 minutes
 - Incident Creation: Enabled
 
-screenshots/08-analytics-rule-general.png  
-screenshots/09-analytics-rule-kql.png
+![Analytics rule configuration](screenshots/08-analytics-rule-general.png)
+![Analytics rule KQL](screenshots/09-analytics-rule-kql.png)
 
 ---
 
@@ -130,21 +132,21 @@ Enabled entity mapping to enrich investigation context:
 - Account → UserPrincipalName
 - IP Address → IPAddress
 
-screenshots/10-entity-mapping.png
+![Entity mapping configuration](screenshots/10-entity-mapping.png)
 
 ---
 
 ### Incident Settings
 Configured analytics rule to create incidents from alerts.
 
-screenshots/11-incident-settings.png
+![Incident creation settings](screenshots/11-incident-settings.png)
 
 ---
 
 ### Rule Enabled
 Confirmed analytics rule status as Enabled.
 
-screenshots/12-rule-enabled.png
+![Analytics rule enabled](screenshots/12-rule-enabled.png)
 
 ---
 
@@ -152,7 +154,7 @@ screenshots/12-rule-enabled.png
 
 Simulated repeated failed authentication attempts using a non‑privileged test account. The analytics rule successfully generated a Microsoft Sentinel incident, validating detection logic and SIEM functionality.
 
-screenshots/13-incident-generated.png
+![Sentinel incident generated](screenshots/13-incident-generated.png)
 
 ---
 
