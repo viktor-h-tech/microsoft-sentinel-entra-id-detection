@@ -1,0 +1,9 @@
+// Microsoft Sentinel scheduled analytics rule
+// Use case: repeated failed Entra ID sign-ins from the same user and source IP.
+// Lab configuration: 30-minute lookback, 5-minute frequency, alert at 3 failures.
+
+SigninLogs
+| where TimeGenerated > ago(30m)
+| where ResultType != 0
+| summarize FailedAttempts = count() by UserPrincipalName, IPAddress, bin(TimeGenerated, 10m)
+| where FailedAttempts >= 3
