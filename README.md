@@ -1,200 +1,114 @@
-# Microsoft Sentinel – Entra ID Failed Sign-In Detection
+# Microsoft Sentinel — Entra ID Failed Sign-In Detection
 
-## Project Overview
+> **SOC / Blue Team portfolio project:** built and validated an end-to-end Microsoft Sentinel detection for repeated failed Entra ID sign-ins.
 
-This project demonstrates the deployment and configuration of **Microsoft Sentinel (SIEM)** to detect credential-based attack behavior using **Microsoft Entra ID (Azure AD)** sign‑in logs. A custom **KQL** analytics rule was created to identify multiple failed sign‑in attempts within a defined time window and generate security incidents following **SOC analyst** workflows.
+## What this project proves
 
-This lab validates end-to-end SIEM functionality, from log ingestion to incident creation and investigation.
+- Configuring Entra ID diagnostic settings and validating log ingestion in Log Analytics
+- Writing and deploying a scheduled KQL analytics rule in Microsoft Sentinel
+- Mapping account and IP entities for faster investigation
+- Generating and reviewing a security incident from controlled test activity
+- Applying basic detection-engineering thinking: scope, threshold, severity, tuning, and documentation
 
----
+## Detection use case
+
+**Objective:** identify repeated failed Entra ID sign-ins from the same user and IP address that may indicate password spraying, brute force, or credential-stuffing behavior.
+
+**Data source:** `SigninLogs` forwarded from Microsoft Entra ID to a dedicated Log Analytics workspace.
+
+**Detection:** [`detections/entra-id-failed-signins.kql`](detections/entra-id-failed-signins.kql)
+
+| Configuration | Value |
+|---|---|
+| Rule type | Scheduled query |
+| Lookback | 30 minutes |
+| Query frequency | Every 5 minutes |
+| Threshold | 3 failed attempts |
+| Severity | Medium |
+| Entity mapping | Account: `UserPrincipalName`; IP: `IPAddress` |
+| Incident creation | Enabled |
+| ATT&CK context | Credential Access / Initial Access |
+
+> This is a lab threshold, not a production baseline. A production deployment should tune exclusions, alert grouping, suppression, and thresholds against normal user behavior.
 
 ## Architecture
 
-Microsoft Entra ID  
-↓  
-Diagnostic Settings  
-↓  
-Log Analytics Workspace  
-↓  
-Microsoft Sentinel  
-↓  
-Custom KQL Analytics Rule  
-↓  
-Security Incident
+```
+Microsoft Entra ID
+        ↓
+Diagnostic settings (SigninLogs / AuditLogs)
+        ↓
+Log Analytics workspace
+        ↓
+Microsoft Sentinel
+        ↓
+Scheduled KQL analytics rule
+        ↓
+Alert and security incident
+```
 
----
+## Implementation and validation
 
-## Technologies Used
+### 1. Azure and Sentinel setup
 
-- Microsoft Azure
-- Microsoft Sentinel (SIEM / SOAR)
-- Microsoft Entra ID (Azure AD)
-- Log Analytics Workspace
-- Kusto Query Language (KQL)
-
----
-
-## Environment Setup
-
-### Tenant and Subscription Validation
-Verified correct Azure tenant and subscription context prior to deployment.
+- Verified the intended Azure tenant and subscription.
+- Applied Contributor permissions at the subscription scope for resource deployment.
+- Created a dedicated Log Analytics workspace and enabled Microsoft Sentinel.
 
 ![Tenant validation](screenshots/01-tenant-verification.png)
+![Log Analytics workspace](screenshots/03-log-analytics-workspace-deployed.png)
+![Sentinel enabled](screenshots/04-sentinel-enabled.png)
 
----
+### 2. Entra ID log ingestion
 
-### Role-Based Access Control (RBAC)
-Granted Contributor permissions at the subscription scope to enable Sentinel resource deployment.
-
-![RBAC contributor role](screenshots/02-rbac-contributor-role.png)
-
----
-
-### Log Analytics Workspace Deployment
-Created a dedicated Log Analytics Workspace to store security telemetry.
-
-![Log Analytics workspace deployed](screenshots/03-log-analytics-workspace-deployed.png)
-
----
-
-### Microsoft Sentinel Enabled
-Enabled Microsoft Sentinel on the workspace.
-
-![Sentinel enabled on workspace](screenshots/04-sentinel-enabled.png)
-
----
-
-## Log Ingestion Configuration
-
-### Entra ID Solution Deployment
-Deployed the required Sentinel solution for Entra ID monitoring.
-
-![Entra ID solution deployed](screenshots/05-entra-id-solution-deployed.png)
-
----
-
-### Diagnostic Settings
-Configured Entra ID diagnostic settings to forward SignInLogs and AuditLogs to Sentinel.
-
-![Entra ID diagnostic settings](screenshots/06-entra-id-diagnostic-settings.png)
-
----
-
-### Log Ingestion Validation
-Confirmed successful ingestion of Entra ID sign‑in logs.
+- Deployed the Entra ID Sentinel solution.
+- Sent `SigninLogs` and `AuditLogs` to the workspace through diagnostic settings.
+- Confirmed successful `SigninLogs` ingestion with KQL.
 
 ```kql
-SigninLogs  
+SigninLogs
 | take 5
 ```
 
-![SigninLogs query results](screenshots/07-signinlogs-ingestion.png)
+![Diagnostic settings](screenshots/06-entra-id-diagnostic-settings.png)
+![Log ingestion validation](screenshots/07-signinlogs-ingestion.png)
 
----
+### 3. Detection engineering
 
-## Analytics Rule – Detection Engineering
-
-### Detection Objective
-Detect multiple failed Entra ID sign‑in attempts from the same user and IP address within a short time window, indicating potential brute‑force or credential stuffing activity.
-
----
-
-### KQL Detection Logic
-
-```kql
-SigninLogs  
-| where TimeGenerated > ago(30m)  
-| where ResultType != 0  
-| summarize FailedAttempts = count() by UserPrincipalName, IPAddress, bin(TimeGenerated, 10m)  
-| where FailedAttempts >= 3
-```
-
----
-
-### Analytics Rule Configuration
-
-- Rule Type: Scheduled query
-- Severity: Medium
-- MITRE ATT&CK Tactics:
-  - Credential Access
-  - Initial Access
-- Schedule: Runs every 5 minutes
-- Incident Creation: Enabled
+The rule aggregates failed sign-ins by user, source IP, and 10-minute window. It then alerts once the threshold is met.
 
 ![Analytics rule configuration](screenshots/08-analytics-rule-general.png)
-![Analytics rule KQL](screenshots/09-analytics-rule-kql.png)
+![KQL query](screenshots/09-analytics-rule-kql.png)
+![Entity mapping](screenshots/10-entity-mapping.png)
+![Incident settings](screenshots/11-incident-settings.png)
 
----
+### 4. Controlled test and incident validation
 
-### Entity Mapping
-Enabled entity mapping to enrich investigation context:
+A non-privileged test account generated repeated failed sign-ins. Sentinel created an incident, validating the full path from telemetry to investigation.
 
-- Account → UserPrincipalName
-- IP Address → IPAddress
+![Generated incident](screenshots/13-incident-generated.png)
 
-![Entity mapping configuration](screenshots/10-entity-mapping.png)
+See the [incident walkthrough](docs/incident-walkthrough.md) for the analyst validation process.
 
----
+## Skills demonstrated
 
-### Incident Settings
-Configured analytics rule to create incidents from alerts.
+Microsoft Sentinel · Microsoft Entra ID · Azure RBAC · Log Analytics · KQL · SIEM deployment · identity telemetry · alert triage · detection engineering · incident validation
 
-![Incident creation settings](screenshots/11-incident-settings.png)
+## Lessons learned
 
----
+- Sentinel scheduled analytics rules are not real-time detections.
+- Explicit time filtering matters for KQL performance and predictable results.
+- RBAC and managed-identity permissions can block otherwise correct deployments.
+- Controlled testing with non-administrative accounts reduces the risk of accidental lockouts.
+- A working rule still needs tuning before it is useful in production.
 
-### Rule Enabled
-Confirmed analytics rule status as Enabled.
+## Next improvements
 
-![Analytics rule enabled](screenshots/12-rule-enabled.png)
-
----
-
-## Incident Generation and Investigation
-
-Simulated repeated failed authentication attempts using a non‑privileged test account. The analytics rule successfully generated a Microsoft Sentinel incident, validating detection logic and SIEM functionality.
-
-![Sentinel incident generated](screenshots/13-incident-generated.png)
-
----
-
-## Key Skills Demonstrated
-
-- SIEM deployment and configuration
-- Identity log ingestion and validation
-- KQL query authoring and optimization
-- Detection engineering
-- Azure RBAC troubleshooting
-- SOC-style incident investigation
-- Microsoft Sentinel analytics tuning
-
----
-
-## Lessons Learned
-
-- Microsoft Sentinel analytics rules are schedule‑based, not real‑time
-- Explicit time filtering is critical for KQL performance
-- Sentinel managed identities require correct RBAC permissions
-- Detection testing should use non‑administrative accounts to avoid lockouts
-
----
-
-## Future Enhancements
-
-- Add SOAR automation using Logic Apps
-- Expand detections to include risky sign‑ins
-- Build Sentinel Workbooks for visualization
-- Integrate Microsoft Defender telemetry
-
----
-
-## Author
-
-Viktor Huynh  
-Microsoft Sentinel SIEM Lab Project
-
----
+- Add alert grouping and suppression to reduce repeated incident creation from overlapping lookback windows.
+- Add detections for risky sign-ins and anomalous locations.
+- Build a Sentinel workbook for authentication trends and investigation context.
+- Integrate Microsoft Defender telemetry and document cross-source triage.
 
 ## Disclaimer
 
-This project was completed in a controlled lab environment for educational and portfolio purposes. Detection thresholds and configurations should be adjusted for production environments.
+Completed in a controlled lab environment for educational and portfolio purposes. Detection thresholds and response procedures must be adjusted before production use.
